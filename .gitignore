@@ -1,0 +1,42 @@
+notepad .gitignore
+```
+
+**Paste this content:**
+```
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+*.zip
+
+# Node
+node_modules/
+.env.local
+build/
+dist/
+
+# AWS
+.aws/
+response*.json
+test*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
