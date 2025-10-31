@@ -1,0 +1,98 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual trigger
+
+env:
+  AWS_REGION: ap-south-1
+  TERRAFORM_VERSION: 1.6.0
+
+jobs:
+  deploy:
+    name: Deploy Infrastructure & Lambda
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Package Lambda function
+        run: |
+          cd lambdas/transaction-validator
+          pip install boto3 -t . --upgrade
+          zip -r lambda.zip lambda_function.py boto3* botocore* dateutil* jmespath* s3transfer* urllib3* six.py
+          echo "Lambda function packaged"
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Terraform Init
+        run: |
+          cd infrastructure
+          terraform init
+      
+      - name: Terraform Plan
+        run: |
+          cd infrastructure
+          terraform plan -out=tfplan
+      
+      - name: Terraform Apply
+        run: |
+          cd infrastructure
+          terraform apply -auto-approve tfplan
+          echo "Infrastructure deployed successfully"
+      
+      - name: Get API Endpoint
+        id: api_endpoint
+        run: |
+          cd infrastructure
+          ENDPOINT=$(terraform output -raw api_endpoint)
+          echo "endpoint=$ENDPOINT" >> $GITHUB_OUTPUT
+          echo "API Endpoint: $ENDPOINT"
+      
+      - name: Test Deployment
+        run: |
+          echo "Testing API endpoint..."
+          ENDPOINT="${{ steps.api_endpoint.outputs.endpoint }}"
+          
+          # Test with a low-risk transaction
+          RESPONSE=$(curl -s -X POST "$ENDPOINT" \
+            -H "Content-Type: application/json" \
+            -d '{"amount": 500, "transaction_type": "debit_card", "user_id": "ci_test", "is_international": false, "new_payee": false}')
+          
+          echo "API Response: $RESPONSE"
+          
+          # Check if response contains expected fields
+          if echo "$RESPONSE" | grep -q "transaction_id"; then
+            echo "✅ Deployment test passed!"
+          else
+            echo "❌ Deployment test failed!"
+            exit 1
+          fi
+      
+      - name: Deployment Summary
+        run: |
+          echo "##  Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Lambda function deployed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Infrastructure updated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ API Gateway configured" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**API Endpoint:** \`${{ steps.api_endpoint.outputs.endpoint }}\`" >> $GITHUB_STEP_SUMMARY

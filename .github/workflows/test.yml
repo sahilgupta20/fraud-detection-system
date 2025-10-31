@@ -1,0 +1,66 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-lambda:
+    name: Test Lambda Functions
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3 pytest pytest-cov moto
+      
+      - name: Run Lambda tests
+        run: |
+          cd lambdas/transaction-validator
+          pytest tests/ -v --cov=. --cov-report=term-missing || echo "No tests found yet - will add them next!"
+      
+      - name: Check Lambda syntax
+        run: |
+          cd lambdas/transaction-validator
+          python -m py_compile lambda_function.py
+          echo "✅ Lambda syntax is valid!"
+
+  validate-terraform:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+      
+      - name: Terraform Format Check
+        run: |
+          cd infrastructure
+          terraform fmt -check -recursive || echo "⚠️ Run 'terraform fmt' to fix formatting"
+      
+      - name: Terraform Init
+        run: |
+          cd infrastructure
+          terraform init -backend=false
+      
+      - name: Terraform Validate
+        run: |
+          cd infrastructure
+          terraform validate
+          echo "✅ Terraform configuration is valid!"

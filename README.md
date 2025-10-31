@@ -6,6 +6,8 @@ A cloud-native, serverless fraud detection platform built with AWS, inspired by 
 
 
 
+![Tests](https://github.com/sahilgupta20/fraud-detection-system/actions/workflows/test.yml/badge.svg)
+![Deploy](https://github.com/sahilgupta20/fraud-detection-system/actions/workflows/deploy.yml/badge.svg)
 \[!\[AWS](https://img.shields.io/badge/AWS-Lambda%20%7C%20DynamoDB-orange)](https://aws.amazon.com/)
 
 \[!\[Terraform](https://img.shields.io/badge/IaC-Terraform-purple)](https://www.terraform.io/)
