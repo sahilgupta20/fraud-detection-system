@@ -394,7 +394,71 @@ aws lambda invoke \\
 
 
 
-\## 🔮 Roadmap
+##  API Documentation
+
+### Live API Endpoint
+```
+POST https://[your-api-id].execute-api.ap-south-1.amazonaws.com/development/transactions
+```
+
+### Request Format
+
+**Example Request:**
+```json
+{
+  "amount": 5000,
+  "transaction_type": "wire_transfer",
+  "user_id": "user123",
+  "is_international": false,
+  "new_payee": true
+}
+```
+
+### Response Format
+
+**Success Response:**
+```json
+{
+  "statusCode": 200,
+  "body": {
+    "transaction_id": "TXN-20251028163136",
+    "status": "REVIEW_REQUIRED",
+    "risk_score": 55,
+    "message": "Transaction processed with risk score: 55"
+  }
+}
+```
+
+### Decision Logic
+
+| Risk Score | Status | Action |
+|------------|--------|--------|
+| 0-39 | APPROVED  | Transaction proceeds |
+| 40-69 | REVIEW_REQUIRED  | Manual investigation |
+| 70-100 | BLOCKED  | Transaction denied |
+
+### Testing the API
+
+**cURL Example:**
+```bash
+curl -X POST "YOUR-API-ENDPOINT" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 15000, "transaction_type": "wire_transfer", "is_international": true, "new_payee": true}'
+```
+
+**PowerShell Example:**
+```powershell
+$body = @{
+    amount = 5000
+    transaction_type = "wire_transfer"
+    user_id = "user123"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "YOUR-API-ENDPOINT" -Method POST -Body $body -ContentType "application/json"
+```
+
+
+\##  Roadmap
 
 
 
