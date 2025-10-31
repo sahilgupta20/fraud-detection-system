@@ -40,3 +40,14 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Lambda deployment packages
+*.zip
+lambdas/**/boto3/
+lambdas/**/botocore/
+lambdas/**/dateutil/
+lambdas/**/jmespath/
+lambdas/**/s3transfer/
+lambdas/**/urllib3/
+lambdas/**/six.py
+lambdas/**/*.dist-info/

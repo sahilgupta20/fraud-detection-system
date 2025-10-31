@@ -1,6 +1,6 @@
-# IAM Role for Lambda
-resource "aws_iam_role" "lambda_execution_role" {
-  name = "${var.project_name}-lambda-execution-role"
+# Lambda IAM Role
+resource "aws_iam_role" "lambda_role" {
+  name = "${var.project_name}-lambda-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -20,10 +20,10 @@ resource "aws_iam_role" "lambda_execution_role" {
   }
 }
 
-# IAM Policy for Lambda to access DynamoDB and CloudWatch Logs
+# Lambda IAM Policy
 resource "aws_iam_role_policy" "lambda_policy" {
   name = "${var.project_name}-lambda-policy"
-  role = aws_iam_role.lambda_execution_role.id
+  role = aws_iam_role.lambda_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -31,18 +31,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
       {
         Effect = "Allow"
         Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = "arn:aws:logs:*:*:*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "dynamodb:PutItem",
           "dynamodb:GetItem",
-          "dynamodb:UpdateItem",
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
@@ -52,23 +42,46 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "${aws_dynamodb_table.transactions.arn}/index/*",
           "${aws_dynamodb_table.alerts.arn}/index/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
       }
     ]
   })
 }
 
+# Package Lambda function
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/transaction-validator"
+  output_path = "${path.module}/../lambdas/transaction-validator/lambda.zip"
+  excludes = [
+    "tests",
+    "__pycache__",
+    "*.pyc",
+    ".pytest_cache",
+    "requirements-dev.txt",
+    "lambda.zip"
+  ]
+}
+
 # Lambda Function
 resource "aws_lambda_function" "transaction_validator" {
-  filename         = "../lambdas/transaction-validator/lambda.zip"
+  filename         = data.archive_file.lambda_zip.output_path
   function_name    = "${var.project_name}-validator"
-  role            = aws_iam_role.lambda_execution_role.arn
+  role            = aws_iam_role.lambda_role.arn
   handler         = "lambda_function.lambda_handler"
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   runtime         = "python3.11"
   timeout         = 30
   memory_size     = 256
-  
-  source_code_hash = filebase64sha256("../lambdas/transaction-validator/lambda.zip")
-  
+
   environment {
     variables = {
       TRANSACTIONS_TABLE = aws_dynamodb_table.transactions.name
@@ -81,7 +94,7 @@ resource "aws_lambda_function" "transaction_validator" {
   }
 }
 
-# CloudWatch Log Group for Lambda
+# CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "lambda_logs" {
   name              = "/aws/lambda/${aws_lambda_function.transaction_validator.function_name}"
   retention_in_days = 7
