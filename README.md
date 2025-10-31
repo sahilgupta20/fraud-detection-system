@@ -459,6 +459,57 @@ $body = @{
 Invoke-RestMethod -Uri "YOUR-API-ENDPOINT" -Method POST -Body $body -ContentType "application/json"
 ```
 
+##  CI/CD Pipeline
+
+### Automated Testing & Deployment
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+**Test Workflow** (`test.yml`)
+- Runs on every push to main/develop
+- Executes 8 unit tests with pytest
+- Validates Terraform configuration
+- Checks Python syntax
+- Ensures code quality before deployment
+
+**Deploy Workflow** (`deploy.yml`)
+- Automatically deploys to AWS on main branch
+- Packages Lambda function with dependencies
+- Runs Terraform to update infrastructure
+- Tests deployment with live API call
+- Completes in ~70 seconds
+
+### Workflow Status
+
+![Tests](https://github.com/sahilgupta20/fraud-detection-system/actions/workflows/test.yml/badge.svg)
+![Deploy](https://github.com/sahilgupta20/fraud-detection-system/actions/workflows/deploy.yml/badge.svg)
+
+### Setup CI/CD
+
+1. **Configure AWS Credentials in GitHub Secrets:**
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+   - `AWS_REGION`
+
+2. **Push to main branch:**
+```bash
+   git push origin main
+```
+
+3. **Watch automated deployment:**
+   - Go to Actions tab in GitHub
+   - See tests run and pass
+   - See deployment complete
+   - System is live!
+
+### Test Results
+
+Latest run: 8/8 tests passing 
+- Risk score calculation tests
+- Lambda handler tests
+- Error handling tests
+- DynamoDB integration tests
+
 
 \##  Roadmap
 
