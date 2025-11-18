@@ -1,0 +1,20 @@
+{
+  "transaction_id": "tx_test_002",
+  "user_id": "user_67890",
+  "amount": 25000,
+  "transaction_type": "transfer",
+  "is_international": true,
+  "hour": 3,
+  "day_of_week": 6,
+  "location": "international",
+  "merchant_category": "online",
+  "new_payee": true,
+  "amount_ratio": 10.0,
+  "velocity_score": 15,
+  "failed_login_attempts": 5,
+  "account_age_days": 2,
+  "transactions_last_24h": 20,
+  "time_risk": 0.95,
+  "account_risk": 0.9,
+  "timestamp": "2025-11-11T03:30:00Z"
+}

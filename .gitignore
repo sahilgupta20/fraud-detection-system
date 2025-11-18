@@ -1,32 +1,36 @@
-notepad .gitignore
-```
-
-**Paste this content:**
-```
 # Terraform
-*.tfstate
-*.tfstate.*
 .terraform/
 .terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+.terraform.tfvars
+terraform.tfstate.d/
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
-.env
+*.so
+.Python
+env/
 venv/
-*.zip
-
-# Node
-node_modules/
-.env.local
-build/
+*.egg-info/
 dist/
+build/
 
 # AWS
-.aws/
-response*.json
-test*.json
+*.zip
+*.whl
+wheels/
+python/
+python-minimal/
+
+# Sensitive
+*.pem
+*.key
+.env
+credentials
+config
 
 # IDE
 .vscode/
@@ -38,16 +42,14 @@ test*.json
 .DS_Store
 Thumbs.db
 
-# Logs
+# Large files
+*.pkl
+ml-training/*.csv
+ml-training/fraud_model.pkl
+ml-training/feature_names.pkl
+
+# Temporary
+temp/
+tmp/
 *.log
 
-# Lambda deployment packages
-*.zip
-lambdas/**/boto3/
-lambdas/**/botocore/
-lambdas/**/dateutil/
-lambdas/**/jmespath/
-lambdas/**/s3transfer/
-lambdas/**/urllib3/
-lambdas/**/six.py
-lambdas/**/*.dist-info/
