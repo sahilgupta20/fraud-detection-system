@@ -53,3 +53,15 @@ temp/
 tmp/
 *.log
 
+# Documentation 
+*.docx
+*.pptx
+*.pdf
+
+# Node modules 
+node_modules/
+
+# Lambda deployment packages
+lambda_deployment.zip
+function.zip
+layer.zip
