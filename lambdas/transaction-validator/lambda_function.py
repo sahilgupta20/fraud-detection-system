@@ -4,6 +4,19 @@ import os
 from datetime import datetime
 from decimal import Decimal
 
+from decimal import Decimal
+
+def convert_floats_to_decimal(obj):
+    """Convert all float values to Decimal for DynamoDB"""
+    if isinstance(obj, list):
+        return [convert_floats_to_decimal(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: convert_floats_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, float):
+        return Decimal(str(obj))
+    else:
+        return obj
+
 # Initialize DynamoDB connection
 dynamodb = boto3.resource('dynamodb')
 transactions_table = dynamodb.Table(os.environ.get('TRANSACTIONS_TABLE', 'fraud-detection-transactions'))
@@ -89,7 +102,7 @@ def lambda_handler(event, context):
         transaction['expiry_time'] = expiry_timestamp
         
         # Save transaction to DynamoDB
-        transactions_table.put_item(Item=transaction)
+        transactions_table.put_item(Item=convert_floats_to_decimal(transaction))
         
         # Create alert if risk score is high or medium
         if risk_score >= 40:
@@ -103,7 +116,7 @@ def lambda_handler(event, context):
                 'alert_type': 'HIGH_RISK_TRANSACTION',
                 'description': f"Transaction flagged with risk score of {risk_score}"
             }
-            alerts_table.put_item(Item=alert)
+            alerts_table.put_item(Item=convert_floats_to_decimal(alert))
         
         # Return success response
         return {

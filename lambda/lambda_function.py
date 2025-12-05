@@ -7,6 +7,7 @@ import boto3
 import joblib
 import numpy as np
 from io import BytesIO
+from decimal import Decimal
 
 # Initialize S3 client
 s3_client = boto3.client('s3')
@@ -140,19 +141,19 @@ def lambda_handler(event, context):
         
         # Prepare response
         response = {
-            'transaction_id': transaction.get('transaction_id', 'unknown'),
-            'ml_fraud_score': ml_score,
-            'fraud_probability': round(fraud_probability, 4),
-            'decision': decision,
-            'reason': reason,
-            'model_version': 'xgboost-v1.0',
-            'timestamp': transaction.get('timestamp', ''),
-            'details': {
-                'amount': transaction.get('amount'),
-                'type': transaction.get('transaction_type'),
-                'is_international': transaction.get('is_international', False)
-            }
-        }
+    'transaction_id': transaction.get('transaction_id', 'unknown'),
+    'ml_fraud_score': ml_score,
+    'fraud_probability': float(round(fraud_probability, 4)),  # Keep as float for JSON
+    'decision': decision,
+    'reason': reason,
+    'model_version': 'xgboost-v1.0',
+    'timestamp': transaction.get('timestamp', ''),
+    'details': {
+        'amount': float(transaction.get('amount', 0)),  # Convert to float
+        'type': transaction.get('transaction_type'),
+        'is_international': transaction.get('is_international', False)
+    }
+}
         
         print(f"Decision: {decision} (ML Score: {ml_score})")
         
