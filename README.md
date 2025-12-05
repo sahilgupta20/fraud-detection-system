@@ -134,8 +134,6 @@ Inspired by \[Nasdaq Verafin](https://verafin.com/)'s mission to combat financia
 
 ## Screenshots
 
-## Screenshots
-
 ### Live Dashboard
 ![Dashboard Demo](docs/screenshots/dashboard-demo.png)
 *Real-time fraud detection with risk visualization*
