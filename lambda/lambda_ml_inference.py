@@ -9,26 +9,24 @@ import numpy as np
 from io import BytesIO
 from decimal import Decimal
 
-# Initialize S3 client
+
 s3_client = boto3.client('s3')
 
-# Global variables for model (loaded once, reused across invocations)
+
 model = None
 feature_names = None
 BUCKET_NAME = 'fraud-ml-data-sahil-2024'
 
 def load_model():
-    """Load model from S3 (only once per container)"""
     global model, feature_names
     
     if model is None:
         print("Loading model from S3...")
         
-        # Download model
         model_obj = s3_client.get_object(Bucket=BUCKET_NAME, Key='models/fraud_model.pkl')
         model = joblib.load(BytesIO(model_obj['Body'].read()))
         
-        # Download feature names
+      
         features_obj = s3_client.get_object(Bucket=BUCKET_NAME, Key='models/feature_names.pkl')
         feature_names = joblib.load(BytesIO(features_obj['Body'].read()))
         
@@ -37,9 +35,7 @@ def load_model():
     return model, feature_names
 
 def prepare_features(transaction):
-    """Convert transaction to model input format - MATCHES TRAINING DATA"""
-    
-    # Map transaction type to codes
+
     type_mapping = {
         'purchase': 0,
         'transfer': 1,
@@ -48,7 +44,7 @@ def prepare_features(transaction):
         'payment': 4
     }
     
-    # Map location to codes
+
     location_mapping = {
         'domestic': 0,
         'international': 1,
@@ -58,8 +54,7 @@ def prepare_features(transaction):
         'EU': 3,
         'AS': 4
     }
-    
-    # Map merchant category to codes
+
     merchant_mapping = {
         'retail': 0,
         'online': 1,
@@ -70,8 +65,7 @@ def prepare_features(transaction):
         'travel': 6,
         'other': 7
     }
-    
-    # Extract features in EXACT order model expects
+
     features = {
         'amount': float(transaction.get('amount', 0)),
         'transaction_type': type_mapping.get(transaction.get('transaction_type', 'purchase').lower(), 0),
@@ -93,24 +87,19 @@ def prepare_features(transaction):
     return features
 
 def calculate_risk_score_ml(transaction, model, feature_names):
-    """Use ML model to predict fraud probability"""
-    
-    # Prepare features
+
     features = prepare_features(transaction)
-    
-    # Create feature array in correct order
+
     feature_array = np.array([[features[name] for name in feature_names]])
-    
-    # Get prediction probability
-    fraud_probability = float(model.predict_proba(feature_array)[0][1])  # Convert to Python float
-    
-    # Convert to 0-100 score
+
+    fraud_probability = float(model.predict_proba(feature_array)[0][1])
+
     ml_score = int(fraud_probability * 100)
     
     return ml_score, fraud_probability
 
 def make_decision(ml_score):
-    """Determine action based on ML score"""
+
     if ml_score < 30:
         return "APPROVE", "Low risk - transaction approved"
     elif ml_score < 60:
@@ -119,13 +108,11 @@ def make_decision(ml_score):
         return "BLOCK", "High risk - transaction blocked"
 
 def lambda_handler(event, context):
-    """Main Lambda handler"""
+
     
     try:
-        # Load model (cached after first invocation)
         model, feature_names = load_model()
         
-        # Parse request
         if isinstance(event.get('body'), str):
             transaction = json.loads(event['body'])
         else:
@@ -133,13 +120,11 @@ def lambda_handler(event, context):
         
         print(f"Processing transaction: {transaction.get('transaction_id', 'unknown')}")
         
-        # Get ML prediction
         ml_score, fraud_probability = calculate_risk_score_ml(transaction, model, feature_names)
         
-        # Make decision
+
         decision, reason = make_decision(ml_score)
         
-        # Prepare response
         response = {
     'transaction_id': transaction.get('transaction_id', 'unknown'),
     'ml_fraud_score': ml_score,
