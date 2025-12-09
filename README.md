@@ -1,136 +1,98 @@
 # Fraud Detection System
 
-Real-time transaction monitoring system using machine learning to detect fraudulent financial transactions.
+Real-time ML system that scores transactions and decides whether to approve, review, or block them.
 
-## Overview
+**Demo:** http://fraud-detection-dashboard-sahil.s3-website.ap-south-1.amazonaws.com
 
-Built to understand financial crime prevention at scale. The system processes transactions through a trained XGBoost model and returns risk scores with automatic decision-making.
+## What it does
 
-**Live Demo:** http://fraud-detection-dashboard-sahil.s3-website.ap-south-1.amazonaws.com
+You submit a transaction → Lambda runs it through an XGBoost model → you get a risk score (0-100) and a decision.
 
-## Architecture
+High-risk transaction (large wire transfer, new payee, international, odd hours) gets blocked. Normal purchase goes through.
+
+## How it works
 ```
-Client → API Gateway → Lambda (Validator) → Lambda (ML) → DynamoDB
-                                    ↓
-                                   S3 (Model Storage)
+Dashboard → API Gateway → Lambda (validation) → Lambda (ML inference) → DynamoDB
+                                                        ↓
+                                                   S3 (model file)
 ```
 
-## Features
+Two Lambda functions. First one validates the request. Second one loads the model from S3 and runs inference. Results get logged to DynamoDB.
 
-- Real-time fraud scoring (0-100 scale)
-- Sub-second latency for predictions
-- Automatic approve/review/block decisions
-- Transaction history and analytics
-- Visual risk dashboard
+## Tech
 
-## Tech Stack
+- Python, XGBoost, scikit-learn
+- AWS Lambda, API Gateway, DynamoDB, S3
+- Vanilla JS frontend, Chart.js
+- Terraform for infrastructure
 
-**Backend**
-- AWS Lambda (serverless compute)
-- API Gateway (REST endpoint)
-- DynamoDB (transaction storage)
-- S3 (model storage)
+## Model stats
 
-**ML**
-- XGBoost classifier
-- 15 engineered features
-- 96% accuracy, 92% recall
+Trained on 10k synthetic transactions. 96% accuracy, 92% recall. Good enough for a demo, wouldn't trust it with real money.
 
-**Frontend**
-- Vanilla JavaScript
-- Chart.js for visualization
+Training takes about 2 minutes on a laptop. Most of the project time went into deployment, not the model.
 
-## API Usage
+## API
 
-**Endpoint:** `POST https://rzrdu0u8gh.execute-api.ap-south-1.amazonaws.com/prod/transactions`
-
-**Request:**
+POST to `https://rzrdu0u8gh.execute-api.ap-south-1.amazonaws.com/prod/transactions`
 ```json
 {
   "amount": 5000,
   "transaction_type": "wire_transfer",
-  "user_id": "user_12345",
+  "user_id": "user_123",
   "is_international": true,
   "new_payee": true,
-  "hour": 14,
-  "day_of_week": 3,
-  "location": "international",
-  "merchant_category": "online",
-  "amount_ratio": 3.5,
-  "velocity_score": 5,
-  "failed_login_attempts": 0,
-  "account_age_days": 90,
-  "transactions_last_24h": 4,
-  "time_risk": 0.3,
-  "account_risk": 0.4
+  "hour": 3,
+  "day_of_week": 2
 }
 ```
 
-**Response:**
+Returns:
 ```json
 {
   "transaction_id": "tx_abc123",
-  "risk_score": 75,
-  "decision": "REVIEW",
-  "message": "Transaction flagged for manual review"
+  "risk_score": 85,
+  "decision": "BLOCK"
 }
 ```
 
-## Model Performance
+Not all fields are required. The model uses 15 features total but has defaults for missing ones.
 
-| Metric | Score |
-|--------|-------|
-| Accuracy | 96.5% |
-| Precision | 94.1% |
-| Recall | 91.8% |
-| AUC-ROC | 0.98 |
-
-## Setup
-
-**Prerequisites**
-- Python 3.11
-- AWS Account
-- AWS CLI configured
-
-**Local Training**
+## Running locally
 ```bash
 cd ml-training
 pip install -r requirements.txt
 python train_local.py
 ```
 
-**Deploy to AWS**
-```bash
-cd lambda
-python deploy_with_public_layer.py
-```
+This spits out a model file. Upload it to S3 and point the Lambda at it.
 
-## Project Structure
-```
-fraud-detection-system/
-├── dashboard/           # Frontend UI
-├── lambda/              # Lambda functions
-├── ml-training/         # Model training scripts
-├── infrastructure/      # Terraform configs
-└── lambdas/            # Additional Lambda functions
-```
+## What's missing
 
-## Results
+- No authentication (API is open)
+- No model retraining pipeline
+- No monitoring beyond basic CloudWatch
+- Cold starts are slow (~3s first request)
 
-- Training time: 2 minutes (local)
-- Inference latency: 400ms (warm)
-- False positive rate: 6%
-- Fraud detection rate: 92%
+It's a portfolio project, not production software.
+
+## Why I built this
+
+Wanted to understand what goes into real-time fraud detection. Read about how Verafin does it at scale. Built a toy version to learn the basics.
+
+The ML part was easy. The deployment part took 3 weeks.
+
+## Structure
+```
+├── dashboard/        # frontend
+├── lambda/           # lambda functions
+├── ml-training/      # model training
+├── infrastructure/   # terraform
+```
 
 ## License
 
 MIT
-
-## Author
-
-Sahil Gupta - [GitHub](https://github.com/sahilgupta20)
-
-Inspired by \[Nasdaq Verafin](https://verafin.com/)'s mission to combat financial crime and protect vulnerable populations.
 
 ## Screenshots
 
